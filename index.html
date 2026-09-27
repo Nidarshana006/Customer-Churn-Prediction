@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Churn Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0f1f3d;
+            --navy-light: #1a3260;
+            --gold: #c9a84c;
+            --gold-light: #e8c97a;
+            --cream: #f8f5ee;
+            --white: #ffffff;
+            --gray: #6b7280;
+            --light-gray: #f3f4f6;
+            --red: #dc2626;
+            --yellow: #d97706;
+            --green: #16a34a;
+            --border: #e2e8f0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--cream); min-height: 100vh; color: var(--navy); }
+        .header { background: var(--navy); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+        .header-logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 40px; height: 40px; background: var(--gold); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .logo-text { font-family: 'Playfair Display', serif; color: var(--white); font-size: 20px; }
+        .logo-text span { color: var(--gold); }
+        .header-nav a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; font-weight: 500; cursor: pointer; margin-left: 30px; }
+        .header-nav a:hover, .header-nav a.active { color: var(--gold); }
+        .main { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        .page-title { text-align: center; margin-bottom: 40px; }
+        .page-title h1 { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--navy); margin-bottom: 8px; }
+        .page-title p { color: var(--gray); font-size: 15px; }
+        .progress-container { background: var(--white); border-radius: 16px; padding: 24px 32px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .progress-steps { display: flex; align-items: center; justify-content: space-between; position: relative; }
+        .progress-line { position: absolute; top: 20px; left: 10%; right: 10%; height: 2px; background: var(--border); z-index: 0; }
+        .progress-line-fill { height: 100%; background: var(--gold); transition: width 0.4s ease; width: 0%; }
+        .step-item { display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 1; flex: 1; }
+        .step-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--white); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; color: var(--gray); transition: all 0.3s; }
+        .step-circle.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
+        .step-circle.completed { background: var(--gold); border-color: var(--gold); color: var(--white); }
+        .step-label { font-size: 12px; color: var(--gray); font-weight: 500; text-align: center; }
+        .step-label.active { color: var(--navy); font-weight: 600; }
+        .form-card { background: var(--white); border-radius: 16px; padding: 36px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; }
+        .step-content { display: none; }
+        .step-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .step-header { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .step-number { font-size: 12px; color: var(--gold); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+        .step-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--navy); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        label { font-size: 13px; font-weight: 600; color: var(--navy); }
+        select, input[type="number"] { padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--navy); background: var(--white); transition: border-color 0.2s; }
+        select:focus, input[type="number"]:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(15,31,61,0.08); }
+        .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
+        .btn { padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-family: 'DM Sans', sans-serif; }
+        .btn-primary { background: var(--navy); color: var(--white); }
+        .btn-primary:hover { background: var(--navy-light); transform: translateY(-1px); }
+        .btn-secondary { background: transparent; color: var(--gray); border: 1.5px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--navy); color: var(--navy); }
+        .btn-predict { background: var(--gold); color: var(--navy); padding: 14px 36px; font-size: 15px; }
+        .btn-predict:hover { background: var(--gold-light); transform: translateY(-1px); }
+        #result-section { display: none; }
+        .result-card { background: var(--white); border-radius: 16px; padding: 36px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; }
+        .result-header { text-align: center; margin-bottom: 32px; }
+        .result-badge { display: inline-block; padding: 8px 20px; border-radius: 100px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+        .badge-high { background: #fee2e2; color: var(--red); }
+        .badge-medium { background: #fef3c7; color: var(--yellow); }
+        .badge-low { background: #dcfce7; color: var(--green); }
+        .result-title { font-family: 'Playfair Display', serif; font-size: 26px; margin-bottom: 8px; }
+        .result-subtitle { color: var(--gray); font-size: 14px; }
+        .prob-section { background: var(--light-gray); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .prob-label { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .prob-label span:first-child { font-size: 13px; font-weight: 600; color: var(--navy); }
+        .prob-label span:last-child { font-size: 20px; font-weight: 700; color: var(--navy); }
+        .prob-bar { height: 12px; background: var(--border); border-radius: 100px; overflow: hidden; }
+        .prob-fill { height: 100%; border-radius: 100px; transition: width 1s ease; width: 0%; }
+        .fill-high { background: linear-gradient(90deg, #f87171, var(--red)); }
+        .fill-medium { background: linear-gradient(90deg, #fcd34d, var(--yellow)); }
+        .fill-low { background: linear-gradient(90deg, #4ade80, var(--green)); }
+        .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        .risk-item { padding: 16px; border-radius: 12px; text-align: center; border: 2px solid transparent; }
+        .risk-item.active-risk { border-color: currentColor; }
+        .risk-high { background: #fee2e2; color: var(--red); }
+        .risk-medium { background: #fef3c7; color: var(--yellow); }
+        .risk-low { background: #dcfce7; color: var(--green); }
+        .risk-icon { font-size: 24px; margin-bottom: 6px; }
+        .risk-label { font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        .risk-range { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+        .recommendation { background: #eff6ff; border-left: 4px solid var(--navy); border-radius: 0 12px 12px 0; padding: 16px 20px; margin-bottom: 24px; }
+        .rec-title { font-size: 12px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .rec-text { font-size: 14px; color: #1e40af; line-height: 1.5; }
+        .btn-restart { width: 100%; padding: 14px; background: var(--navy); color: var(--white); border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+        .btn-restart:hover { background: var(--navy-light); }
+        .history-card { background: var(--white); border-radius: 16px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .history-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--navy); }
+        .btn-clear { padding: 8px 16px; background: transparent; border: 1.5px solid #fee2e2; color: var(--red); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+        .btn-clear:hover { background: #fee2e2; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .history-table th { background: var(--light-gray); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--gray); font-size: 12px; text-transform: uppercase; }
+        .history-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--navy); }
+        .history-empty { text-align: center; padding: 30px; color: var(--gray); font-size: 14px; }
+        .tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+        .tag-churn { background: #fee2e2; color: var(--red); }
+        .tag-safe { background: #dcfce7; color: var(--green); }
+        .tag-high { background: #fee2e2; color: var(--red); }
+        .tag-medium { background: #fef3c7; color: var(--yellow); }
+        .tag-low { background: #dcfce7; color: var(--green); }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="header-logo">
+        <div class="logo-icon">📊</div>
+        <div class="logo-text">Churn<span>IQ</span></div>
+    </div>
+    <div class="header-nav">
+        <a class="active">Prediction</a>
+        <a onclick="scrollToHistory()">History</a>
+    </div>
+</div>
+<div class="main">
+    <div class="page-title">
+        <h1>Customer Churn Prediction</h1>
+        <p>Fill in the customer details to predict churn probability and risk level</p>
+    </div>
+    <div class="progress-container">
+        <div class="progress-steps">
+            <div class="progress-line"><div class="progress-line-fill" id="progressFill"></div></div>
+            <div class="step-item"><div class="step-circle active" id="circle-1">1</div><div class="step-label active" id="label-1">Personal</div></div>
+            <div class="step-item"><div class="step-circle" id="circle-2">2</div><div class="step-label" id="label-2">Services</div></div>
+            <div class="step-item"><div class="step-circle" id="circle-3">3</div><div class="step-label" id="label-3">Payment</div></div>
+            <div class="step-item"><div class="step-circle" id="circle-4">4</div><div class="step-label" id="label-4">Result</div></div>
+        </div>
+    </div>
+    <div class="form-card" id="form-section">
+        <!-- Step 1 -->
+        <div class="step-content active" id="step-1">
+            <div class="step-header"><div class="step-number">Step 01 of 03</div><div class="step-title">Personal Details</div></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Gender</label><select id="gender_Male"><option value="0">Female</option><option value="1">Male</option></select></div>
+                <div class="form-group"><label>Senior Citizen</label><select id="SeniorCitizen"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label>Partner</label><select id="Partner_Yes"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label>Dependents</label><select id="Dependents_Yes"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group full-width"><label>Tenure (Months with company)</label><input type="number" id="tenure" placeholder="e.g. 12" min="0" max="72"></div>
+            </div>
+            <div class="btn-row"><div></div><button class="btn btn-primary" onclick="goToStep(2)">Next Step →</button></div>
+        </div>
+        <!-- Step 2 -->
+        <div class="step-content" id="step-2">
+            <div class="step-header"><div class="step-number">Step 02 of 03</div><div class="step-title">Service Details</div></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Phone Service</label><select id="PhoneService_Yes"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label>Internet Service</label><select id="InternetService_Fiber optic"><option value="0">DSL</option><option value="1">Fiber Optic</option></select></div>
+                <div class="form-group"><label>Online Security</label><select id="OnlineSecurity_Yes"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label>Online Backup</label><select id="OnlineBackup_Yes"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label>Tech Support</label><select id="TechSupport_Yes"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label>Streaming TV</label><select id="StreamingTV_Yes"><option value="0">No</option><option value="1">Yes</option></select></div>
+            </div>
+            <div class="btn-row"><button class="btn btn-secondary" onclick="goToStep(1)">← Back</button><button class="btn btn-primary" onclick="goToStep(3)">Next Step →</button></div>
+        </div>
+        <!-- Step 3 -->
+        <div class="step-content" id="step-3">
+            <div class="step-header"><div class="step-number">Step 03 of 03</div><div class="step-title">Payment Details</div></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Contract Type</label><select id="Contract_One year"><option value="0">Month-to-month</option><option value="1">One Year</option><option value="2">Two Year</option></select></div>
+                <div class="form-group"><label>Paperless Billing</label><select id="PaperlessBilling_Yes"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group"><label>Monthly Charges (₹)</label><input type="number" id="MonthlyCharges" placeholder="e.g. 65.50" step="0.01"></div>
+                <div class="form-group"><label>Total Charges (₹)</label><input type="number" id="TotalCharges" placeholder="e.g. 1500.00" step="0.01"></div>
+                <div class="form-group full-width"><label>Payment Method</label><select id="PaymentMethod_Electronic check"><option value="1">Electronic Check</option><option value="0">Mailed Check</option><option value="0">Bank Transfer</option><option value="0">Credit Card</option></select></div>
+            </div>
+            <div class="btn-row"><button class="btn btn-secondary" onclick="goToStep(2)">← Back</button><button class="btn btn-predict" onclick="predictChurn()">🔍 Predict Churn</button></div>
+        </div>
+    </div>
+    <!-- Result -->
+    <div id="result-section">
+        <div class="result-card">
+            <div class="result-header">
+                <div class="result-badge" id="risk-badge">High Risk</div>
+                <div class="result-title" id="result-title"></div>
+                <div class="result-subtitle">Based on the provided customer data</div>
+            </div>
+            <div class="prob-section">
+                <div class="prob-label"><span>Churn Probability</span><span id="prob-percent">0%</span></div>
+                <div class="prob-bar"><div class="prob-fill" id="prob-fill"></div></div>
+            </div>
+            <div class="risk-grid">
+                <div class="risk-item risk-low" id="risk-low"><div class="risk-icon">🟢</div><div class="risk-label">Low Risk</div><div class="risk-range">0% - 40%</div></div>
+                <div class="risk-item risk-medium" id="risk-medium"><div class="risk-icon">🟡</div><div class="risk-label">Medium Risk</div><div class="risk-range">40% - 70%</div></div>
+                <div class="risk-item risk-high" id="risk-high"><div class="risk-icon">🔴</div><div class="risk-label">High Risk</div><div class="risk-range">70% - 100%</div></div>
+            </div>
+            <div class="recommendation"><div class="rec-title">💡 Recommendation</div><div class="rec-text" id="rec-text"></div></div>
+            <button class="btn-restart" onclick="restart()">🔄 New Prediction</button>
+        </div>
+    </div>
+    <!-- History -->
+    <div class="history-card" id="history-section">
+        <div class="history-header"><div class="history-title">Prediction History</div><button class="btn-clear" onclick="clearHistory()">Clear All</button></div>
+        <table class="history-table">
+            <thead><tr><th>#</th><th>Date & Time</th><th>Tenure</th><th>Monthly Charges</th><th>Result</th><th>Probability</th><th>Risk</th></tr></thead>
+            <tbody id="history-body"><tr><td colspan="7" class="history-empty">No predictions yet!</td></tr></tbody>
+        </table>
+    </div>
+</div>
+<script>
+    let currentStep = 1;
+    let predictionHistory = [];
+
+    function goToStep(step) {
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
+        document.getElementById(`circle-${currentStep}`).classList.remove('active');
+        document.getElementById(`circle-${currentStep}`).classList.add('completed');
+        document.getElementById(`circle-${currentStep}`).innerHTML = '✓';
+        document.getElementById(`label-${currentStep}`).classList.remove('active');
+        currentStep = step;
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+        document.getElementById(`circle-${currentStep}`).classList.remove('completed');
+        document.getElementById(`circle-${currentStep}`).classList.add('active');
+        document.getElementById(`circle-${currentStep}`).innerHTML = currentStep;
+        document.getElementById(`label-${currentStep}`).classList.add('active');
+        const fills = [0, 0, 50, 100];
+        document.getElementById('progressFill').style.width = fills[step] + '%';
+    }
+
+    async function predictChurn() {
+        const data = {
+            "gender_Male": parseInt(document.getElementById("gender_Male").value),
+            "SeniorCitizen": parseInt(document.getElementById("SeniorCitizen").value),
+            "Partner_Yes": parseInt(document.getElementById("Partner_Yes").value),
+            "Dependents_Yes": parseInt(document.getElementById("Dependents_Yes").value),
+            "tenure": parseInt(document.getElementById("tenure").value) || 0,
+            "PhoneService_Yes": parseInt(document.getElementById("PhoneService_Yes").value),
+            "InternetService_Fiber optic": parseInt(document.getElementById("InternetService_Fiber optic").value),
+            "OnlineSecurity_Yes": parseInt(document.getElementById("OnlineSecurity_Yes").value),
+            "OnlineBackup_Yes": parseInt(document.getElementById("OnlineBackup_Yes").value),
+            "TechSupport_Yes": parseInt(document.getElementById("TechSupport_Yes").value),
+            "StreamingTV_Yes": parseInt(document.getElementById("StreamingTV_Yes").value),
+            "Contract_One year": parseInt(document.getElementById("Contract_One year").value),
+            "PaperlessBilling_Yes": parseInt(document.getElementById("PaperlessBilling_Yes").value),
+            "MonthlyCharges": parseFloat(document.getElementById("MonthlyCharges").value) || 0,
+            "TotalCharges": parseFloat(document.getElementById("TotalCharges").value) || 0,
+            "PaymentMethod_Electronic check": parseInt(document.getElementById("PaymentMethod_Electronic check").value)
+        };
+        try {
+            const response = await fetch("http://127.0.0.1:5000/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            showResult(result, data);
+        } catch (err) {
+            alert("Error: Flask server running-a irukka check pannu!");
+        }
+    }
+
+    function showResult(result, data) {
+        const prob = result.probability;
+        const isChurn = result.churn === 1;
+        document.getElementById(`circle-3`).classList.remove('active');
+        document.getElementById(`circle-3`).classList.add('completed');
+        document.getElementById(`circle-3`).innerHTML = '✓';
+        document.getElementById(`circle-4`).classList.add('active');
+        document.getElementById(`label-4`).classList.add('active');
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('form-section').style.display = 'none';
+        document.getElementById('result-section').style.display = 'block';
+        let riskLevel, badgeClass, fillClass, recommendation;
+        if (prob >= 70) {
+            riskLevel = 'High Risk';
+            badgeClass = 'badge-high';
+            fillClass = 'fill-high';
+            recommendation = '🚨 Immediate action required! Call the customer today. Offer 20% discount on monthly charges or a free upgrade to retain them.';
+            document.getElementById('risk-high').classList.add('active-risk');
+        } else if (prob >= 40) {
+            riskLevel = 'Medium Risk';
+            badgeClass = 'badge-medium';
+            fillClass = 'fill-medium';
+            recommendation = '⚠️ Monitor closely. Send a personalized retention email with special offers or improved service packages this week.';
+            document.getElementById('risk-medium').classList.add('active-risk');
+        } else {
+            riskLevel = 'Low Risk';
+            badgeClass = 'badge-low';
+            fillClass = 'fill-low';
+            recommendation = '✅ Customer is satisfied. Continue providing excellent service to maintain this positive relationship.';
+            document.getElementById('risk-low').classList.add('active-risk');
+        }
+        document.getElementById('risk-badge').textContent = riskLevel;
+        document.getElementById('risk-badge').className = `result-badge ${badgeClass}`;
+        document.getElementById('result-title').textContent = isChurn ? '⚠️ This Customer Will CHURN!' : '✅ This Customer Will NOT Churn!';
+        document.getElementById('prob-percent').textContent = prob + '%';
+        document.getElementById('prob-fill').className = `prob-fill ${fillClass}`;
+        document.getElementById('rec-text').textContent = recommendation;
+        setTimeout(() => { document.getElementById('prob-fill').style.width = prob + '%'; }, 100);
+        const now = new Date();
+        predictionHistory.unshift({
+            date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            tenure: data.tenure,
+            charges: data.MonthlyCharges,
+            result: isChurn ? 'Churn' : 'Safe',
+            prob: prob,
+            risk: riskLevel
+        });
+        updateHistory();
+    }
+
+    function updateHistory() {
+        const tbody = document.getElementById('history-body');
+        if (predictionHistory.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="history-empty">No predictions yet!</td></tr>';
+            return;
+        }
+        tbody.innerHTML = predictionHistory.map((h, i) => `
+            <tr>
+                <td>${i + 1}</td><td>${h.date}</td><td>${h.tenure} months</td><td>₹${h.charges}</td>
+                <td><span class="tag ${h.result === 'Churn' ? 'tag-churn' : 'tag-safe'}">${h.result}</span></td>
+                <td>${h.prob}%</td>
+                <td><span class="tag ${h.risk === 'High Risk' ? 'tag-high' : h.risk === 'Medium Risk' ? 'tag-medium' : 'tag-low'}">${h.risk}</span></td>
+            </tr>`).join('');
+    }
+
+    function restart() {
+        currentStep = 1;
+        document.getElementById('form-section').style.display = 'block';
+        document.getElementById('result-section').style.display = 'none';
+        for (let i = 1; i <= 4; i++) {
+            document.getElementById(`circle-${i}`).className = 'step-circle';
+            document.getElementById(`circle-${i}`).innerHTML = i;
+            document.getElementById(`label-${i}`).className = 'step-label';
+        }
+        document.getElementById('circle-1').classList.add('active');
+        document.getElementById('label-1').classList.add('active');
+        document.getElementById('progressFill').style.width = '0%';
+        document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+        document.getElementById('step-1').classList.add('active');
+        document.querySelectorAll('.risk-item').forEach(r => r.classList.remove('active-risk'));
+        document.getElementById('prob-fill').style.width = '0%';
+    }
+
+    function clearHistory() { predictionHistory = []; updateHistory(); }
+    function scrollToHistory() { document.getElementById('history-section').scrollIntoView({ behavior: 'smooth' }); }
+</script>
+</body>
+</html>
